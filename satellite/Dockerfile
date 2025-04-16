@@ -12,7 +12,10 @@ RUN mkdir /app && chown python:python /app
 WORKDIR /app
 
 # Copia il file Python
-COPY mainS.py .
+COPY . .
+#COPY mainS.py .
+#COPY hwtelemetry.py .
+
 
 # Espone la porta UDP (es: 5005)
 EXPOSE 5005/udp
@@ -20,6 +23,6 @@ EXPOSE 5005/udp
 USER 1000
 
 # Imposta come entrypoint per il container
-ENTRYPOINT ["python", "mainS.py"]
+ENTRYPOINT ["python", "-u", "mainS.py"]
 
 LABEL authors="re"

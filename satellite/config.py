@@ -1,0 +1,10 @@
+# FILE CONFIGURAZIONE PER mainS.py
+
+UDP_IP = "0.0.0.0"
+UDP_PORT = 5005
+MQTT_BROKER = "localhost"
+# MQTT_BROKER = "172.17.0.1" # All'interno del container
+MQTT_PORT = 1883
+MODEL_PATH = "amazon/chronos-bolt-small"
+PREDICTION_LENGTH = 12
+MAX_WINDOW_CHRONOS_LENGHT = 100

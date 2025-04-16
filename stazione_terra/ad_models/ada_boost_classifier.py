@@ -3,7 +3,6 @@
  - verranno usati due modelli:
     - SUPERVISED: AdaBoostClassifier
     - UNSUPERVISED: IForest
-"""
 
 import os
 import random
@@ -62,7 +61,7 @@ SEED = 2137
 # Estraggo dal mio oggetto df, due dataframes, uno che ha valore df.train == e con tutte le features a seguire
 # l'altro similmente quelle righe che hanno nel campo train = 1 e con il valore anomaly
 
-df = pd.read_csv("../data/dataset.csv", index_col="segment")
+df = pd.read_csv("../satellite/stream_simulator/data/opssat/dataset.csv", index_col="segment")
 
 X_train, y_train = df.loc[df.train == 1, features], df.loc[df.train == 1, "anomaly"]
 X_test, y_test = df.loc[df.train == 0, features], df.loc[df.train == 0, "anomaly"]
@@ -97,4 +96,5 @@ def AdaBoostClassifierPredict(X):
     Y = model.predict(X2)
     Y_score = model.decision_function(X2)
 
-    print("⚠️ Anomaly Detected by AdaBoost!" if Y[0] else "✅ All normal. SCORE:" + str(Y_score))
+    return Y[0], Y_score
+"""
