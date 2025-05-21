@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+
+# Virtual environment
+.venv/
+
+# HuggingFace cache
+satellite/models/foundational/chronosbolt/hf_cache/
+
+# PyCharm project files
+.idea/
+
+# OS files
+.DS_Store
+
+# Large files or temporary data
+*.log
+*.tmp
+*.bak
+
+# Jupyter Notebook checkpoints (se usi notebook)
+.ipynb_checkpoints/
