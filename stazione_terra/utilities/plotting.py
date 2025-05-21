@@ -6,7 +6,7 @@ import pandas as pd
 
 def plotting_quantiles(context_window, quantiles):
     df = pd.DataFrame(context_window)
-    print(df)
+    #print(df)
     forecast_index = range(len(df), len(df) + 12)
     low, median, high = quantiles[0, :, 0], quantiles[0, :, 1], quantiles[0, :, 2]
 

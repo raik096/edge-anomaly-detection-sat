@@ -77,7 +77,10 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 def send_hwtelemetry_to_influxDB(cpu_percent=None, temperature=None, memory_percent=None,
                                   disk_percent=None, network_throughput_sent_KBps=None,
-                                  timestamp=None, channel=None, description=""):
+                                  network_throughput_recv_KBps=None,
+                                  mean_prediction_time_ms=None, timestamp=None,
+                                  channel=None, description=""):
+
     global write_api
 
     try:
@@ -100,7 +103,11 @@ def send_hwtelemetry_to_influxDB(cpu_percent=None, temperature=None, memory_perc
         if disk_percent is not None:
             point = point.field("disk_percent", float(disk_percent))
         if network_throughput_sent_KBps is not None:
-            point = point.field("network_percent", float(network_throughput_sent_KBps))
+            point = point.field("network_throughput_sent_KBps", float(network_throughput_sent_KBps))
+        if network_throughput_recv_KBps is not None:
+            point = point.field("network_throughput_recv_KBps", float(network_throughput_recv_KBps))
+        if mean_prediction_time_ms is not None:
+            point = point.field("mean_prediction_time_ms", float(mean_prediction_time_ms))
 
         if timestamp:
             point = point.time(timestamp)

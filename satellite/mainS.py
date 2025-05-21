@@ -1,159 +1,106 @@
-import socket
-import json
-import pandas as pd
-import paho.mqtt.client as mqtt
-from config import UDP_IP, UDP_PORT, MQTT_PORT, MQTT_BROKER, PREDICTION_LENGTH, MAX_WINDOW_CHRONOS_LENGHT
-from satellite.systemtelemetry.hwtelemetry import SystemTelemetry
-
 import os
-os.environ["HF_HOME"] = "./models/hf_cache"  # Cache locale dei modelli
-
-from chronos import BaseChronosPipeline
+import json
 import torch
+import time
+
+from mqtt import mqtt_handler
+from satellite.config import MQTT_PORT, MQTT_BROKER, PLOTTING, MONITORING, STRATEGYMODEL
+from satellite.stream_simulator import NasaSource, OpssatSource
+# from stazione_terra.utilities import plotting
+from systemtelemetry import hwtelemetry
+from satellite.channel.channel import Channel
+from satellite.models.models_factory import get_model
+
+import sys
+print("PYTHONPATH:", sys.path)
 
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        print("🔗 Connected to MQTT Broker!", flush=True)
-    else:
-        print(f"❌ Failed to connect to MQTT Broker with code {rc}", flush=True)
 
+LOG_PATH = "benchmark/light_log.csv"
+os.makedirs("benchmark", exist_ok=True)
 
-#def on_publish(client, userdata, mid):
-#    print(f"✅ Message {mid} published", flush=True)
+telemetry_thread = None  # Global reference to telemetry
 
-mqtt_client = mqtt.Client()
-mqtt_client.on_connect = on_connect
-#mqtt_client.on_publish = on_publish
+# Variabile per tenere traccia dei tempi di previsione
+prediction_times = []
 
-mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
-mqtt_client.loop_start()  # Avvia il loop MQTT per gestire la connessione e le callback
+def setup_environment():
+    os.environ["HF_HOME"] = "./models/hf_cache"
+    if not MONITORING:
+        print("🛑 MONITORING disabilitato: MQTT e HW telemetry non inizializzati.")
+        return None, None
+    transmitter = mqtt_handler.setup_transmitter(MQTT_BROKER, MQTT_PORT)
+    telemetry = hwtelemetry.start_telemetry_thread(transmitter)
+    return transmitter, telemetry
 
-# Inizializza il thread di telemetry e Avvia il thread
-telemetry_thread = SystemTelemetry(mqtt_client)
-telemetry_thread.start()
+def setup_detectors():
+    return {f"CH{i}": Channel(name=f"CH{i}", strategy=get_model(STRATEGYMODEL)) for i in range(10)}
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((UDP_IP, UDP_PORT))
+def process_payload(payload, detectors, transmitter):
+    global telemetry_thread, prediction_times
 
-print(f"Listening on {UDP_IP}:{UDP_PORT}...", flush=True)
+    channel_name = payload.get("channel")
+    timestamp = payload.get("timestamp")
+    value = float(payload.get("value"))  # garantisce compatibilità
 
-# Creo Chronos pipeline
-pipeline = BaseChronosPipeline.from_pretrained(
-    "amazon/chronos-bolt-small",
-    device_map="auto",
-    torch_dtype=torch.bfloat16,
-)
-# La finestra del contesto che viene aggiornata FIFO
-context_window = []
-context_tensor_window = torch.zeros(MAX_WINDOW_CHRONOS_LENGHT, dtype=torch.float32)
-min_quantile_t = None # Il quantile al tempo t+1 che confronto con il nuovo valore t+1
-max_quantile_t = None
+    if channel_name not in detectors:
+        print(f"⚠️ Canale {channel_name} non gestito.")
+        return
 
-#Lista per accumulare le predizioni risultanti
-predictions_list = []
-BATCH_SIZE = 100  # ad esempio, ogni 100 messaggi scriviamo su CSV
+    channel = detectors[channel_name]
 
+    start_time = time.time()
+    anomaly = channel.process(payload)
+    elapsed_ms = (time.time() - start_time) * 1000
 
-while True:
+    prediction_times.append(elapsed_ms)
+    if len(prediction_times) > 100:
+        prediction_times.pop(0)
 
-    try:
-        data, addr = sock.recvfrom(1024)
-        # sensors telemetry
-        payload = json.loads(data.decode())
-        channel = payload.get("channel")
-        timestamp = payload.get("timestamp")
-        value = payload.get("value")
+    mean_prediction_time = round(sum(prediction_times) / len(prediction_times), 2)
 
-        # ---------------- CHRONOS FORECASTING -------------
+    if telemetry_thread:
+        telemetry_thread.update_prediction_time(mean_prediction_time)
 
-        if len(context_window) > MAX_WINDOW_CHRONOS_LENGHT:
-            context_window.pop(0)
+    detector = channel.strategy
 
-        context_window.append(value)
+#    if PLOTTING:
+#        if detector.quantiles is not None and not torch.isnan(detector.quantiles).any():
+#            print(f"[{channel_name}] 🌡 Value: {value:.5f} | Range: [{detector.min_q:.5f}, {detector.max_q:.5f}] | Anomaly: {anomaly}")
+#            plotting.plotting_quantiles(detector.context_window, detector.quantiles)
+#        else:
+#            print(f"[{channel_name}] 🌡 Value: {value:.5f} | Warming up... | Anomaly: {anomaly}")
 
-        # Solo se i quantili sono già stati calcolati una prima volta
-        if min_quantile_t is not None and max_quantile_t is not None:
-            if min_quantile_t > value or max_quantile_t < value:
-                anomaly = 1
-            else:
-                anomaly = 0
-        else:
-            anomaly = 0  # Nessuna previsione ancora
-        print(f"🌡 Value: {value} | Range: [{min_quantile_t}, {max_quantile_t}] | Anomaly: {anomaly}")
-
-# ------------------------------- BENCHMARK -----------------------
-        # Accumula il risultato nella lista
-        predictions_list.append({
+    if MONITORING:
+        mqtt_topic = f"sensori/{channel_name}"
+        mqtt_message = json.dumps({
             "timestamp": timestamp,
             "value": value,
-            "min_quantile": min_quantile_t,
-            "max_quantile": max_quantile_t,
-            "anomaly_pred": anomaly,
-            # Se disponi di ground truth in payload, potresti aggiungerla ad esempio:
-            # "anomaly_gt": payload.get("anomaly_gt")
+            "anomaly": anomaly,
         })
+        transmitter.send(channel_name, mqtt_message)
+        print(f"📡 Published to {mqtt_topic}: {mqtt_message}")
 
-        # Se raggiungiamo il batch size, salviamo su CSV e, eventualmente, calcoliamo metriche
-        if len(predictions_list) >= BATCH_SIZE:
-            predictions_df = pd.DataFrame(predictions_list)
-            csv_path = "predictions.csv"
-            predictions_df.to_csv(csv_path, index=False)
-            print(f"📄 Salvato batch di {BATCH_SIZE} messaggi su {csv_path}")
+    if len(detector.predictions_list) == 0:
+        channel.log_summary()
 
-            # (Opzionale) Se disponi di ground truth, qui potresti richiamare una funzione per calcolare metriche
-            # oppure eseguire il benchmark tramite la classe ChronosBenchmark modificata per CSV.
-            # Ad esempio:
-            from benchmark.chron_benchmark_opssat import ChronosBenchmark
-            benchmark = ChronosBenchmark(
-                ground_truth_csv="/Users/re/PyCharmMiscProject/satellite/stream_simulator/data/opssat/segments.csv",
-                predictions_csv=csv_path,
-                channel=channel,)
+def process_stream(source, mqtt_client):
+    detectors = setup_detectors()
+    for payload in source.stream():
+        print(payload)
+        try:
+            process_payload(payload, detectors, mqtt_client)
+        except json.JSONDecodeError:
+            print("❌ Errore nel parsing JSON")
+        except Exception as e:
+            print(f"❌ Errore: {e}")
 
+def main():
+    global telemetry_thread
+    transmitter, telemetry_thread = setup_environment()
+    source = NasaSource()
+    process_stream(source, transmitter)
 
-            results = benchmark.run()
-            print("Benchmark results:", results)
+if __name__ == "__main__":
+    main()
 
-            # Dopo l'elaborazione, svuota la lista (oppure accumula ulteriormente se preferisci)
-            predictions_list = []
-# -------------------------------------------------------------------------
-
-        context_tensor_window = torch.cat([context_tensor_window[1:], torch.tensor([value], dtype=torch.float32)])
-        quantiles, mean = pipeline.predict_quantiles(
-            context=context_tensor_window,
-            prediction_length=12,
-            quantile_levels=[0.1, 0.5, 0.9],
-        )
-        # print("Quantiles shape:", quantiles.shape)
-        # print("Quantiles:", quantiles)
-        # print("Has NaN:", torch.isnan(quantiles).any())
-        # Adesso la tecnica adottata è il rilevamento dell'anomalia sul primo dato previsto, niente di più
-        max_quantile_t = quantiles[0, 0, 2].item() # Aggiorno il quantile al tempo t+1
-        min_quantile_t = quantiles[0, 0, 0].item()
-
-        # -----------------------------------------------------------
-        # plotting.plotting_quantiles(context_window, quantiles)
-
-        if channel and timestamp and value is not None:
-            mqtt_topic = f"sensori/{channel}"
-            # 0 se è non c'è l'anomalia e 1 se invece c'è
-            mqtt_message = json.dumps({
-                "timestamp": timestamp,
-                "value": value,
-                "anomaly": anomaly,})
-
-            mqtt_client.publish(mqtt_topic, mqtt_message, retain=True)
-            print(f"📡 Published to {mqtt_topic}: {mqtt_message}")
-
-
-    except json.JSONDecodeError:
-        print("❌ Errore nel parsing JSON")
-    except Exception as e:
-        print(f"❌ Errore: {e}")
-
-
-"""
-rimodulare il codice con __init__ dentro ogni cartella e capire meglio
-lavorare sul benchmark e avere dei parametri che mi diano l'immagine di come
-sta andando il tutto
-"""
