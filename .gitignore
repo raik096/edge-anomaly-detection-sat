@@ -21,6 +21,11 @@ satellite/models/foundational/chronosbolt/hf_cache/
 *.tmp
 *.bak
 
+**/hf_cache/
+*.bin
+*.pt
+
+
 # Jupyter Notebook checkpoints (se usi notebook)
 .ipynb_checkpoints/
 satellite/models/foundational/chronosbolt/hf_cache/
