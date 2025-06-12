@@ -1,9 +1,11 @@
 # FILE CONFIGURAZIONE PER mainS.py
+#from stazione_terra.mainT import MQTT_BROKER
 
 UDP_IP = "0.0.0.0"
 UDP_PORT = 5005
+MQTT_BROKER = "mosquitto"
 # MQTT_BROKER = "localhost"
-MQTT_BROKER = "172.17.0.1" # All'interno del container
+# MQTT_BROKER = "172.17.0.1" # All'interno del container
 MQTT_PORT = 1883
 MODEL_PATH = "amazon/chronos-bolt-small"
 PREDICTION_LENGTH = 1
@@ -17,5 +19,5 @@ BENCHMARK_COUNTER = 300
 STRATEGYMODEL = "chronosbolt"
 PLOTTING = False
 MONITORING = True
-NORMALIZATION = False
+NORMALIZATION = True
 DETTAGLIO = ["ALTO", "NORMALE"]

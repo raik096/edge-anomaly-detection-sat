@@ -3,10 +3,10 @@ import json
 import torch
 import time
 
-from mqtt import mqtt_handler
+from satellite.mqtt import mqtt_handler
 from satellite.config import MQTT_PORT, MQTT_BROKER, PLOTTING, MONITORING, STRATEGYMODEL
 from satellite.stream_simulator import NasaSource, OpssatSource
-# from stazione_terra.utilities import plotting
+#from stazione_terra.utilities import plotting
 from systemtelemetry import hwtelemetry
 from satellite.channel.channel import Channel
 from satellite.models.models_factory import get_model
@@ -98,7 +98,7 @@ def process_stream(source, mqtt_client):
 def main():
     global telemetry_thread
     transmitter, telemetry_thread = setup_environment()
-    source = NasaSource()
+    source = OpssatSource()
     process_stream(source, transmitter)
 
 if __name__ == "__main__":

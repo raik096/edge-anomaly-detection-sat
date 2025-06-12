@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./satellite/mqtt/mosquitto/config:/mosquitto/config
+      - ./satellite/mqtt/mosquitto/data:/mosquitto/data
+      - ./satellite/mqtt/mosquitto/log:/mosquitto/log
+
+
+
+  satellite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: satellite
+    depends_on:
+      - mosquitto
+    environment:
+      MQTT_BROKER: mosquitto
+      MQTT_PORT: 1883
+    volumes:
+      - ./results:/app/satellite/benchmark/results
+    command: python -u benchmark/grid_bench_edge.py
+    # deploy:
+    #  resources:
+    #   limits:
+    #      memory: 512M
+    #      cpus: '1'

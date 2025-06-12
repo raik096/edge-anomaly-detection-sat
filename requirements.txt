@@ -9,3 +9,7 @@ torch                  # per Chronos
 chronos-forecasting    # modello Chronos
 nixtla                 # TimeGPT client
 pyod                   # Unsupervised (LOF, INNE, IForest)
+
+# Benchmark
+tqdm
+more-itertools

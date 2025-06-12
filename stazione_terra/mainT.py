@@ -59,8 +59,8 @@ def process_sensor_message(msg):
         topic = msg.topic.split("/")[-1]
         is_anomaly = payload.get("anomaly")
 
-        if NORMALIZATION:
-            value = normalize_value(value, topic)
+        #if NORMALIZATION:
+        #    value = normalize_value(value, topic)
 
         if timestamp is None or value is None:
             print("⚠️  Messaggio sensore incompleto.")

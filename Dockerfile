@@ -1,51 +1,52 @@
-# Immagine base
+# Immagine base minimale
 FROM python:3.9-slim
 
-# Crea un utente e gruppo non-root con home directory
+# Crea un utente non-root
 RUN groupadd -g 1000 python && \
     useradd -r -u 1000 -g python -m python
 
-# Aggiunge satellite/ al PYTHONPATH e imposta una cartella scrivibile per matplotlib
+# Variabili ambiente
 ENV PYTHONPATH=/app
 ENV MPLCONFIGDIR=/tmp/matplotlib
-
-# Imposta una directory cache Hugging Face scrivibile
 ENV HF_HOME=/app/hf_cache
 
-# Installa dipendenze di sistema per compilare pacchetti
+# Installa solo librerie minime di sistema necessarie
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     gcc \
     g++ \
-    build-essential && \
-    rm -rf /var/lib/apt/lists/*
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Imposta la working directory
+# Directory di lavoro
 WORKDIR /app
 
-# Copia file di requirements e installa le dipendenze Python
-COPY satellite/requirements.txt .
-RUN echo "🧪 Contenuto /app/satellite/data/nasa/test" && \
-    find /app/satellite/data/nasa/test -name "*.npy" || echo "❌ Nessun file copiato"
-
+# Copia requirements e installa Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia il progetto
+# Copia codice sorgente
 COPY satellite /app/satellite
+COPY satellite/data /app/satellite/data
 
-# Crea directory Hugging Face cache e assegna permessi
+# Crea directory cache Hugging Face e assegna permessi
 RUN mkdir -p /app/hf_cache && chown -R python:python /app
 
-# Cambia permessi di tutto il progetto all'utente non-root
+# Assegna permessi a tutto il progetto
 RUN chown -R python:python /app /home/python
 
-# Passa all'utente non-root
+# Passa all’utente non-root
 USER python
 
-# Imposta la directory principale del progetto
+# Working directory nel codice
 WORKDIR /app/satellite
 
-# Entry point del container
+# Entry point per benchmark
+#ENTRYPOINT ["python", "-u", "benchmark/grid_bench_edge.py"]
 ENTRYPOINT ["python", "-u", "mainS.py"]
 
 # Metadata
