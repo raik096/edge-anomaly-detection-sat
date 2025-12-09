@@ -14,8 +14,7 @@ Il progetto nasce dall’esigenza di ridurre la latenza e aumentare l’autonomi
 
 Il sistema è progettato per operare in contesti computazionalmente limitati (edge computing) e integra modelli fondazionali di nuova generazione, come **Chronos** e **TimeGPT**, con un'infrastruttura completa per la simulazione, la visualizzazione e il benchmarking.
 
-
-[Open Info System PDF](images/infoSystem.pdf)
+[Info System](images/infoSystem.jpg)
 
 ---
 
