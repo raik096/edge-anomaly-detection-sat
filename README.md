@@ -16,7 +16,6 @@ Il sistema è progettato per operare in contesti computazionalmente limitati (ed
 
 [Info System](images/infoSystem.jpg)
 
-
 ---
 
 ## ⚙️ Architettura del Sistema
