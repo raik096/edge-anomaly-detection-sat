@@ -1,13 +1,15 @@
 # 🚀 Edge-Based Anomaly Detection in Satellite Telemetry
 
-**Author:** Andres Lazzari  
+**Bachelor's Degree Thesis - University of Pisa** **Author:** Andres Lazzari  
+**Academic Year:** 2024/2025  
+**Supervisor:** Dr. Vincenzo Lomonaco
 
 ---
 
 ## 📌 Project Description
 
-This repository contains the code and resources developed for a personal project exploring an edge-based system for *forecasting* and *anomaly detection* on satellite telemetry data.  
-The project was born out of a deep curiosity to understand how to reduce latency and increase the operational autonomy of satellites by detecting anomalous behaviors locally (on-board) in real-time.
+This repository contains the code and resources developed for my bachelor's thesis: an edge-based system for *forecasting* and *anomaly detection* on satellite telemetry data.  
+The project arises from the need to reduce latency and increase the operational autonomy of satellites by detecting anomalous behaviors locally (on-board) in real-time.
 
 The system is designed to operate in computationally constrained environments (edge computing) and integrates next-generation foundational models, such as **Chronos** and **TimeGPT**, with a complete infrastructure for simulation, visualization, and benchmarking.
 
