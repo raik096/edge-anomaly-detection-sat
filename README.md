@@ -1,85 +1,82 @@
 # 🚀 Edge-Based Anomaly Detection in Satellite Telemetry
 
-**Tesi di Laurea Triennale - Università di Pisa**  
-**Autore:** Andres Lazzari  
-**Anno Accademico:** 2024/2025  
-**Relatore:** Dott. Vincenzo Lomonaco
+**Author:** Andres Lazzari  
 
 ---
 
-## 📌 Descrizione del Progetto
+## 📌 Project Description
 
-Questo repository contiene il codice e le risorse sviluppate per la mia tesi di laurea: un sistema edge-based per il *forecasting* e il *rilevamento anomalie* su dati di telemetria satellitare.  
-Il progetto nasce dall’esigenza di ridurre la latenza e aumentare l’autonomia operativa dei satelliti, rilevando localmente (a bordo) comportamenti anomali in tempo reale.
+This repository contains the code and resources developed for a personal project exploring an edge-based system for *forecasting* and *anomaly detection* on satellite telemetry data.  
+The project was born out of a deep curiosity to understand how to reduce latency and increase the operational autonomy of satellites by detecting anomalous behaviors locally (on-board) in real-time.
 
-Il sistema è progettato per operare in contesti computazionalmente limitati (edge computing) e integra modelli fondazionali di nuova generazione, come **Chronos** e **TimeGPT**, con un'infrastruttura completa per la simulazione, la visualizzazione e il benchmarking.
+The system is designed to operate in computationally constrained environments (edge computing) and integrates next-generation foundational models, such as **Chronos** and **TimeGPT**, with a complete infrastructure for simulation, visualization, and benchmarking.
 
 ![Info System](images/infoSystem.jpg)
 
 ---
 
-## ⚙️ Architettura del Sistema
+## ⚙️ System Architecture
 
-Il sistema è suddiviso in due moduli principali:
+The system is divided into two main modules:
 
-- **Modulo OnBoard (Edge):**
-  - Forecasting & Anomaly Detection locale
-  - Simulazione dati da canali NASA/OPS-SAT
-  - Strategy Pattern per la selezione dinamica dei modelli
-  - Containerizzazione con Docker per ambienti a bassa potenza
+- **OnBoard Module (Edge):**
+  - Local Forecasting & Anomaly Detection
+  - Data simulation from NASA/OPS-SAT channels
+  - Strategy Pattern for dynamic model selection
+  - Docker containerization for low-power environments
 
-- **Modulo OnGround (Terra):**
-  - Ricezione dati via MQTT
-  - Archiviazione in InfluxDB
-  - Visualizzazione in tempo reale con Grafana
-  - Analisi comparativa tra modelli (Chronos, TimeGPT, modelli non supervisionati)
+- **OnGround Module (Earth):**
+  - Data reception via MQTT
+  - Storage in InfluxDB
+  - Real-time visualization with Grafana
+  - Comparative analysis between models (Chronos, TimeGPT, unsupervised models)
 
 ---
 
-## 📊 Benchmark e Modelli
+## 📊 Benchmarks and Models
 
-Sono stati implementati diversi modelli per il confronto delle performance in termini di accuratezza, F1-score, precision, recall:
+Several models were implemented to compare performance in terms of accuracy, F1-score, precision, and recall:
 
-- ✅ **Modelli Fondazionali**
+- ✅ **Foundational Models**
   - Chronos (AutoGluon-based)
   - TimeGPT (Nixtla)
   
-- ⚙️ **Modelli Non Supervisionati**
+- ⚙️ **Unsupervised Models**
   - Isolation Forest (IForest)
   - KNN, LOF
   - INNE
   
-- 🧠 **Strategie di rilevamento anomalie**
-  - Differenze, soglie dinamiche, Z-Score, Mediane mobili, ecc.
+- 🧠 **Anomaly Detection Strategies**
+  - Differences, dynamic thresholds, Z-Score, rolling medians, etc.
 
-Tutti i risultati sono stati salvati in CSV e visualizzati su Grafana per analisi comparative su più canali.
-
----
-
-## 🛰 Dataset
-
-- **OPS-SAT**: dataset pubblici ESA
-- **NASA SMAP**: serie multicanale per test su condizioni reali
-- **Simulazione**: supporto per test offline ed esperimenti ripetibili
+All results were saved in CSV format and visualized on Grafana for comparative analysis across multiple channels.
 
 ---
 
-## 🧪 Come Eseguire
+## 🛰 Datasets
 
-> Requisiti:
+- **OPS-SAT**: ESA public datasets
+- **NASA SMAP**: Multichannel series for testing under real conditions
+- **Simulation**: Support for offline testing and repeatable experiments
+
+---
+
+## 🧪 How to Run
+
+> Requirements:
 - Python 3.10+
 - Docker & Docker Compose
-- librerie: `pandas`, `influxdb-client`, `torch`, `scikit-learn`, `nixtla`, ecc.
+- Libraries: `pandas`, `influxdb-client`, `torch`, `scikit-learn`, `nixtla`, etc.
 
 ```bash
-git clone https://github.com/tuo-username/edge-anomaly-detection-sat.git
+git clone [https://github.com/tuo-username/edge-anomaly-detection-sat.git](https://github.com/tuo-username/edge-anomaly-detection-sat.git)
 cd edge-anomaly-detection-sat
 
-# Setup ambiente
+# Environment setup
 pip install -r requirements.txt
 
-# Avvio simulazione e rilevamento
+# Start simulation and detection
 python mainT.py --config config/edge.yaml
 
-# Avvio backend Grafana + InfluxDB
+# Start Grafana + InfluxDB backend
 docker-compose up
